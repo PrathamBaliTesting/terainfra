@@ -1,0 +1,75 @@
+pipeline {
+    agent any
+    tools{
+        terraform 'TERRAFORM_HOME'
+    }
+
+    parameters {
+        string(name: 'BRANCH_NAME', defaultValue: '', description: 'Enter the Branch name for terraform apply to perform')
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                script {
+                    // Checkout the branch based on the parameter
+                    git branch: "${params.BRANCH_NAME}", url: 'https://github.com/PrathamBaliTesting/terainfra.git'
+                }
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                script {
+                    // Run terraform init
+                    bat 'terraform init'  // Use 'bat' if running on Windows
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            when {
+                // Run this stage only if the branch is not develop or master
+                not {
+                    expression { params.BRANCH_NAME == 'develop' || params.BRANCH_NAME == 'main' }
+                }
+            }
+            steps {
+                script {
+                   withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_access_key']]) {
+                        bat 'terraform plan'
+                    }
+                }
+                    
+            }
+        }
+
+        stage('Terraform Apply') {
+            when {
+                // Run this stage only if the branch is develop or master
+                expression { params.BRANCH_NAME == 'develop' || params.BRANCH_NAME == 'main' }
+            }
+            steps {
+                script {
+                    withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_access_key']]) {
+                        bat 'terraform apply --auto-approve'
+                    }
+                }
+            }
+        }
+        stage('Approve Destroy') {
+            steps {
+                script {
+                    input message: 'Do you want to proceed with Terraform destroy?'
+                }
+            }
+        }
+        stage('Destroy Infrastructure') {
+            steps {
+                withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'aws_access_key']]) {
+                    bat 'terraform destroy --auto-approve'
+                }
+            }
+        }
+    }
+}
