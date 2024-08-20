@@ -65,7 +65,7 @@ resource "aws_route_table" "private_rt" {
 
   route {
     cidr_block = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.ngw.id
+    gateway_id = aws_nat_gateway.ngw.id
   }
 
   tags = {
@@ -74,7 +74,7 @@ resource "aws_route_table" "private_rt" {
   
 }
 
-#Association of Route Table with privblic Subnet 
+#Association of Route Table with Public Subnet 
 resource "aws_route_table_association" "private_subnets_asso" {
   
   subnet_id = aws_subnet.private_subnet.id
@@ -91,6 +91,15 @@ resource "aws_internet_gateway" "main" {
   
 }
 
+#Generating Elastic IP
+resource "aws_eip" "eip" {
+  domain = "vpc"
+
+  tags = {
+    Name = "Bali_elastic"
+  }
+  
+}
 
 #Allocation of NAT Gateway
 resource "aws_nat_gateway" "ngw" {

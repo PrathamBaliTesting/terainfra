@@ -28,6 +28,11 @@ output "nat_gateway_id" {
   value = aws_nat_gateway.ngw.id
 }
 
+output "eip_id" {
+  description = "ID of Elastic IP"
+  value = aws_eip.eip.id
+  
+}
 
 output "network_acl_id" {
   description = "ID of Netwrok ACL"
